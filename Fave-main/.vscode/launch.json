@@ -1,0 +1,16 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "srcdebug",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "/diskpool/sk/model4edit/Fave-B1ue/src_debug/auto_main.py",
+            "console": "integratedTerminal",
+            "python":"/diskpool/sk/miniconda3/envs/verl_py12/bin/python"
+        },
+    ]
+}
