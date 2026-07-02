@@ -30,7 +30,7 @@ parser.add_argument('--num_blocks', type=int, default=4, help='Number of Transfo
 parser.add_argument('--epochs', type=int, default=200, help='Number of epochs for training')
 parser.add_argument('--decay_step', type=int, default=100, help='Decay step for StepLR')
 parser.add_argument('--gamma', type=float, default=0.1, help='Gamma for StepLR')
-parser.add_argument('--metric_ks', nargs='+', type=int, default=[10, 20], help='ks for Metric@k')
+parser.add_argument('--metric_ks', nargs='+', type=int, default=[5, 10, 20], help='ks for Metric@k')
 parser.add_argument('--optimizer', type=str, default='Adam', choices=['SGD', 'Adam'])
 parser.add_argument('--lr', type=float, default=0.001, help='Learning rate')
 parser.add_argument('--weight_decay', type=float, default=0, help='L2 regularization')
