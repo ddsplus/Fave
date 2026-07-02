@@ -134,46 +134,31 @@ class Att_Fave_model(nn.Module):
         return embedding
 
     def switch_Matrix(self, sequence, device):
+        batch_size, _ = sequence.size()
+        sparse_matrix = torch.zeros(batch_size, self.item_num, device=device)
 
-        batch_size, seq_len = sequence.size()
-
-        num_items = self.item_num
-        sparse_matrix = torch.zeros(batch_size, num_items, device=device)
-        for i in range(batch_size):
-            row_data = sequence[i]
-            non_zero_indices = row_data[row_data != 0]
-            sparse_matrix[i, non_zero_indices] = 1
+        valid_mask = sequence != 0
+        if valid_mask.any():
+            row_idx = torch.arange(batch_size, device=device).unsqueeze(1).expand_as(sequence)
+            sparse_matrix[row_idx[valid_mask], sequence[valid_mask]] = 1
 
         return sparse_matrix
 
     def balanced_mse_loss(self, target, output, mask_ratio=1.0):
+        positive_mask = target == 1
+        negative_mask = ~positive_mask
 
-        target_shape = target.shape
+        pos_count = positive_mask.sum().to(output.dtype)
+        neg_count = negative_mask.sum().to(output.dtype)
+        neg_keep_prob = (pos_count * mask_ratio) / neg_count.clamp_min(1.0)
+        neg_keep_prob = torch.clamp(neg_keep_prob, min=0.0, max=1.0)
 
-        num_ones = torch.sum(target == 1).item()
+        sampled_negatives = (torch.rand_like(output) < neg_keep_prob) & negative_mask
+        sampled_mask = (positive_mask | sampled_negatives).to(output.dtype)
 
-        num_zeros = torch.sum(target == 0).item()
-
-        num_selected_zeros = int(min(num_zeros, num_ones * mask_ratio))
-
-        zero_positions = (target == 0).nonzero(as_tuple=True)
-        one_positions = (target == 1).nonzero(as_tuple=True)
-
-        zero_rows, zero_cols = zero_positions
-        one_rows, one_cols = one_positions
-
-        selected_zero_indices = torch.randint(0, num_zeros, (num_selected_zeros,))
-        selected_zero_positions = (zero_rows[selected_zero_indices], zero_cols[selected_zero_indices])
-
-        mask = torch.zeros_like(target)
-        mask[selected_zero_positions] = 1
-        mask[one_positions] = 1
-
-        masked_target = target * mask
-        masked_output = output * mask
-
-        mse_loss = self.loss_mse(masked_output, masked_target)
-        return mse_loss
+        diff = (output - target) * sampled_mask
+        denom = sampled_mask.sum().clamp_min(1.0)
+        return diff.pow(2).sum() / denom
 
 
     def calculate_loss_pretrain(self, seq_Matrix, item_embeddings, tag_emb, mask_seq):
